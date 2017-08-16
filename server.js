@@ -1,0 +1,99 @@
+'use strict'
+
+const http = require('http');
+const https = require('https');
+const qs = require('querystring');
+const url = require('url');
+const TOKEN = 'MY_VERIFY_TOKEN';
+const PORT = process.env.PORT || 3000;
+const PAGE_ACCESS_TOKEN = 'EAACJzY0clqQBAKyL0GwgoEOZA79RtcJhpVlAnbK3atjoLCXItuXZBdcU94SsiZCZCiS7hYQwIBBcd85tIIpdB3LB1qCuZAkBwXGCybr4yDnGeTwab58uCgx1YOzLqDv3eL3YsGyRvnBTaZBOXxCyCKs9cV3XvIT3KX3w6FP2mDgPYcoubdKDGh';
+const HOST = 'graph.facebook.com';
+const PATH = '/v2.6/me/messages?access_token='+PAGE_ACCESS_TOKEN;
+
+const sendTextMessage = (recipientId, messageText) => { // オウム返しアロー関数
+    const postDataStr = JSON.stringify({
+        recipient: { id: recipientId },
+        message: { text: messageText }
+    });
+
+    const options = {
+        host: HOST,
+        port: 443,
+        path: PATH,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postDataStr),
+            'Accept': 'application/json'
+        }
+    };
+
+    return new Promise((resolve, reject) => {
+        const req = https.request(options, (res) => {
+            let body = '';
+            res.setEncoding('utf8');
+            res.on('data', (chunk) => {
+                body += chunk;
+            });
+            res.on('end', () => resolve(body));
+        });
+
+        req.on('error', (e) => reject(e));
+        req.write(postDataStr);
+        req.end();
+    });
+};
+
+http.createServer((req, res) => {
+    //Webhook登録時の認証用
+    if(req.method === 'GET'){
+        const query = qs.parse(url.parse(req.url).query);
+        if(query['hub.mode'] === 'subscribe' && query['hub.verify_token'] === TOKEN){
+            console.log("Validating webhook");
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.end(query['hub.challenge']);
+        }else{
+            console.error("Failed validation. Make sure the validation tokens match.");
+            res.writeHead(403, {'Content-Type': 'text/plain'});
+            res.end('error');
+        }
+    }
+
+    //シンプルなオウム返し
+    if(req.method === 'POST'){
+        let body = '';
+        req.on('data', (chunk) => {
+            body += chunk;
+        });        
+        req.on('end', () => {
+            console.log('--- Webhook received ---');
+            if(body === '') return; //bodyが空は無視
+
+            const data = JSON.parse(body); // JSON形式に変換
+            const event = data.entry[0].messaging[0];
+            if (data.object === 'page' && event.message) {
+                //メッセージ受信時の処理
+                const senderID = event.sender.id; // ユーザーIDを取得
+                const messageText = event.message.text; // textMessageを受信
+                // const messagePostack = event.postback.payload; // postbackを受信
+                if(messageText === '' && messagePostack === ''){
+                    console.log('メッセージが取得できない');
+                    return;
+                }
+                console.log("Message data: ", event.message); // コールバック
+                sendTextMessage(senderID, messageText) // 送信するユーザー
+                .then((body)=>{
+                    console.log('返信完了');
+                    console.log(body);
+                });
+            }else{
+                console.log("Webhook received unknown event: ", event);
+            }
+
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.end('success');
+        });
+    }
+
+}).listen(PORT);
+console.log(`Server running at ${PORT}`);
