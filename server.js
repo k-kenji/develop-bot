@@ -28,7 +28,7 @@ const sendTextMessage = (recipientId, messageText) => { // オウム返しアロ
         }
     };
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {  // Nodejsのリクエスト処理、promiseを使っている
         const req = https.request(options, (res) => {
             let body = '';
             res.setEncoding('utf8');
@@ -76,10 +76,12 @@ http.createServer((req, res) => {
                 const senderID = event.sender.id; // ユーザーIDを取得
                 const messageText = event.message.text; // textMessageを受信
                 // const messagePostack = event.postback.payload; // postbackを受信
+
                 if(messageText === '' && messagePostack === ''){
                     console.log('メッセージが取得できない');
                     return;
                 }
+                // 固有の処理はここから書く
                 console.log("Message data: ", event.message); // コールバック
                 sendTextMessage(senderID, messageText) // 送信するユーザー
                 .then((body)=>{
