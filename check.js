@@ -49,4 +49,16 @@ wait(3000).then((value) => {
   }).then((value) => {
     console.log(value);
   });
+
+
+
+  // スタートボタン登録
+  curl -X POST -H "Content-Type: application/json" -d '{ 
+    "get_started":{
+      "payload":"GET_STARTED_PAYLOAD"
+    }
+  }' "https://graph.facebook.com/v2.6/me/messenger_profile?access_token=EAACJzY0clqQBAKyL0GwgoEOZA79RtcJhpVlAnbK3atjoLCXItuXZBdcU94SsiZCZCiS7hYQwIBBcd85tIIpdB3LB1qCuZAkBwXGCybr4yDnGeTwab58uCgx1YOzLqDv3eL3YsGyRvnBTaZBOXxCyCKs9cV3XvIT3KX3w6FP2mDgPYcoubdKDGh"    
   
+  
+  // スタートボタンのpayload値を取得する
+  curl -X GET "https://graph.facebook.com/v2.6/me/messenger_profile?fields=get_started&access_token=EAACJzY0clqQBAKyL0GwgoEOZA79RtcJhpVlAnbK3atjoLCXItuXZBdcU94SsiZCZCiS7hYQwIBBcd85tIIpdB3LB1qCuZAkBwXGCybr4yDnGeTwab58uCgx1YOzLqDv3eL3YsGyRvnBTaZBOXxCyCKs9cV3XvIT3KX3w6FP2mDgPYcoubdKDGh"    

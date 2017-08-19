@@ -10,6 +10,12 @@ const PAGE_ACCESS_TOKEN = 'EAACJzY0clqQBAKyL0GwgoEOZA79RtcJhpVlAnbK3atjoLCXItuXZ
 const HOST = 'graph.facebook.com';
 const PATH = '/v2.6/me/messages?access_token='+PAGE_ACCESS_TOKEN;
 
+
+
+const errorText = (error) => {
+    console.log("エラーです");
+}
+
 const sendTextMessage = (recipientId, messageText) => { // オウム返しアロー関数
     const postDataStr = JSON.stringify({
         recipient: { id: recipientId },
@@ -42,7 +48,41 @@ const sendTextMessage = (recipientId, messageText) => { // オウム返しアロ
         req.write(postDataStr);
         req.end();
     });
-};
+}; // オウム返しアロー関数の終了
+
+const sendPostMessage = (recipientId, messagePostack) => { // postback用オウム返しのアロー関数
+    const postDataStr = JSON.stringify({
+        recipient: { id: recipientId },
+        message: { text: messagePostack }
+    });
+
+    const options = {
+        host: HOST,
+        port: 443,
+        path: PATH,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postDataStr),
+            'Accept': 'application/json'
+        }
+    };
+
+    return new Promise((resolve, reject) => {  // Nodejsのリクエスト処理、promiseを使っている
+        const req = https.request(options, (res) => {
+            let body = '';
+            res.setEncoding('utf8');
+            res.on('data', (chunk) => {
+                body += chunk;
+            });
+            res.on('end', () => resolve(body));
+        });
+
+        req.on('error', (e) => reject(e));
+        req.write(postDataStr);
+        req.end();
+    });
+}; // postback用オウム返しアロー関数の終了
 
 http.createServer((req, res) => {
     //Webhook登録時の認証用
@@ -70,14 +110,16 @@ http.createServer((req, res) => {
             if(body === '') return; //bodyが空は無視
 
             const data = JSON.parse(body); // JSON形式に変換
+            console.log("data: ", data);
             const event = data.entry[0].messaging[0];
+            console.log("event: ", event);
             if (data.object === 'page' && event.message) {
                 //メッセージ受信時の処理
                 const senderID = event.sender.id; // ユーザーIDを取得
                 const messageText = event.message.text; // textMessageを受信
                 // const messagePostack = event.postback.payload; // postbackを受信
 
-                if(messageText === '' && messagePostack === ''){
+                if(messageText === ''){
                     console.log('メッセージが取得できない');
                     return;
                 }
@@ -88,10 +130,26 @@ http.createServer((req, res) => {
                     console.log('返信完了');
                     console.log(body);
                 });
-            }else{
+            } else if(data.object === 'page' && event.postback) {
+                // メッセージ受信時の処理
+                const senderID = event.sender.id; // ユーザーIDを取得
+                const messagePostack = event.postback.payload; // payloadを取得
+
+                if(messagePostack === '') {
+                    console.log('ペイロードを取得できない');
+                    return;
+                }
+
+                // 固有の処理
+                console.log("postback data: ", event.postback);
+                sendPostMessage(senderID, messagePostack) // 送信するユーザー
+                .then((body)=>{
+                    console.log('postback返信完了');
+                    console.log(body);
+                });
+            } else {
                 console.log("Webhook received unknown event: ", event);
             }
-
             res.writeHead(200, {'Content-Type': 'text/plain'});
             res.end('success');
         });
