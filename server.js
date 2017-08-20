@@ -11,11 +11,7 @@ const HOST = 'graph.facebook.com';
 const PATH = '/v2.6/me/messages?access_token='+PAGE_ACCESS_TOKEN;
 
 
-
-const errorText = (error) => {
-    console.log("エラーです");
-}
-
+// オウム返しアロー関数
 const sendTextMessage = (recipientId, messageText) => { // オウム返しアロー関数
     const postDataStr = JSON.stringify({
         recipient: { id: recipientId },
@@ -50,6 +46,7 @@ const sendTextMessage = (recipientId, messageText) => { // オウム返しアロ
     });
 }; // オウム返しアロー関数の終了
 
+//postback用オウム返し関数
 const sendPostMessage = (recipientId, messagePostack) => { // postback用オウム返しのアロー関数
     const postDataStr = JSON.stringify({
         recipient: { id: recipientId },
@@ -83,6 +80,9 @@ const sendPostMessage = (recipientId, messagePostack) => { // postback用オウ�
         req.end();
     });
 }; // postback用オウム返しアロー関数の終了
+
+// 新規登録ページボタン関数
+const UserSub = ()
 
 http.createServer((req, res) => {
     //Webhook登録時の認証用
